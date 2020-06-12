@@ -1,7 +1,10 @@
 library(shiny)
 
+ships <- read.csv("ships.csv")
+vessel_types <- unique(sort(ships[["ship_type"]]))
+
 ui <- fluidPage(
-  'Yay!'
+  selectInput("vesselType", "Vessel type", vessel_types),
 )
 
 server <- function(input, output, session) {
