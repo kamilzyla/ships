@@ -1,31 +1,23 @@
 library(shiny)
 library(leaflet)
-library(data.table)
 
-ships <- fread(
-  file = "ships.csv",
-  select = c(
-    "SHIP_ID" = "factor",
-    "SHIPNAME" = "factor",
-    "ship_type" = "factor",
-    "DATETIME" = "character",
-    "LAT" = "numeric",
-    "LON" = "numeric"
-  ),
-  col.names = c("id", "name", "type", "datetime", "lat", "lon")
-)
+source("loadShips.R")
 
 vesselInput <- function(id) {
   ns <- NS(id)
   tagList(
     selectInput(ns("type"), "Vessel type", levels(ships$type)),
-    selectInput(ns("name"), "Vessel name", levels(ships$name))
+    selectInput(ns("name"), "Vessel name", NULL)
   )
 }
 
 vessel <- function(input, output, session) {
+  observeEvent(input$type, {
+    choices = ships %>% filter(type == input$type) %>% select(name)
+    updateSelectInput(session, "name", choices = choices)
+  })
   reactive({
-    paste(input$type, input$name)
+    c(type = input$type, name = input$name)
   })
 }
 
@@ -37,15 +29,17 @@ ui <- fluidPage(
     ),
     mainPanel(
       leafletOutput("map"),
-      textOutput("text")
+      "Longest distance between observations: ",
+      textOutput("text", inline = TRUE)
     )
   )
 )
 
 server <- function(input, output) {
-  vesselId <- callModule(vessel, 'vessel')
+  v <- callModule(vessel, 'vessel')
   output$text <- renderText({
-    vesselId()
+    v <- v()
+    filter(ships, type == v[['type']], name == v[['name']])$dist
   })
   output$map <- renderLeaflet({
     leaflet() %>% addProviderTiles(providers$OpenStreetMap.Mapnik)
