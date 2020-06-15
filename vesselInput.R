@@ -16,7 +16,7 @@ vessel <- function(input, output, session, vessels) {
     group() %>% filter(name == input$name)
   })
   observeEvent(input$type, {
-    updateSelectInput(session, "type", choices = levels(vessels$type))
+    updateSelectInput(session, "type", choices = sort(levels(vessels$type)))
   }, once = TRUE)
   observeEvent(input$type, {
     updateSelectInput(session, "name", choices = group()$name)
