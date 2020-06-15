@@ -4,7 +4,7 @@ library(leaflet)
 source("readShips.R")
 source("vesselInput.R")
 
-ships <- readShips('ships.csv', 'ships.rds')
+ships <- readShips('data/ships.zip', 'data/ships.rds')
 
 ui <- fluidPage(
   titlePanel("Marine data"),
