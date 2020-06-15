@@ -2,28 +2,24 @@ library(dplyr)
 library(geosphere)
 library(readr)
 
-.maxDistance <- function(df) {
-  df <- arrange(df, time)
-  df <- bind_cols(
-    head(df, -1) %>% select(lat1 = lat, lon1 = lon),
-    tail(df, -1) %>% select(lat2 = lat, lon2 = lon)
-  )
-  df %>%
-    mutate(dist = distGeo(cbind(lon1, lat1), cbind(lon2, lat2))) %>%
-    slice_max(dist) %>%
-    slice_tail()
+readShips <- function(csv, rds) {
+  if (file.exists(rds)) {  # Possible race condition / access problem.
+    message("Reading precomputed ship data")
+    ships <- readRDS(rds)
+  } else {
+    message("Reading raw ship data")
+    ships <-
+      .readShipsCsv(csv) %>%
+      .maxDistancePerShip() %>%
+      .uniqueNames()
+    saveRDS(ships, rds)
+  }
+  return(ships)
 }
 
-.csv <- "ships.csv"
-.rds <- "ships.rds"
-
-if (file.exists(.rds)) {  # Possible race condition / access problem.
-  message("Reading precomputed ship data")
-  ships <- readRDS(.rds)
-} else {
-  message("Reading raw ship data")
-  ships <-
-    read_csv(.csv,
+.readShipsCsv <- function(csv) {
+  csv %>%
+    read_csv(
       col_types = cols_only(
         "ship_type" = "f",
         "SHIPNAME" = "c",
@@ -40,12 +36,34 @@ if (file.exists(.rds)) {  # Possible race condition / access problem.
       time = "DATETIME",
       lat = "LAT",
       lon = "LON"
-    ) %>%
+    )
+}
+
+.maxDistancePerShip <- function(df) {
+  df %>%
     group_by(type, name, id) %>%
     group_modify(~ .maxDistance(.x)) %>%
-    ungroup(id) %>%
-    mutate(n = n()) %>%
+    ungroup()
+}
+
+.uniqueNames <- function(df) {
+  df %>%
+    group_by(type, name) %>%
+    mutate(n = n_distinct(id)) %>%
     ungroup() %>%
     mutate(name = if_else(n > 1, paste(name, id), name), .keep = "unused")
-  saveRDS(ships, .rds)
 }
+
+.maxDistance <- function(df) {
+  df <- arrange(df, time)
+  df <- bind_cols(
+    head(df, -1) %>% select(lat1 = lat, lon1 = lon),
+    tail(df, -1) %>% select(lat2 = lat, lon2 = lon)
+  )
+  df %>%
+    mutate(dist = distGeo(cbind(lon1, lat1), cbind(lon2, lat2))) %>%
+    slice_max(dist) %>%
+    slice_tail()
+}
+
+
