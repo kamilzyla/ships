@@ -65,5 +65,3 @@ readShips <- function(csv, rds) {
     slice_max(dist) %>%
     slice_tail()
 }
-
-
