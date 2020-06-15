@@ -1,7 +1,7 @@
 library(shiny)
 library(leaflet)
 
-source("loadShips.R")
+source("readShips.R")
 
 vesselInput <- function(id) {
   ns <- NS(id)
@@ -26,6 +26,8 @@ vessel <- function(input, output, session, vessels) {
   }, ignoreInit = TRUE)
   return(row)
 }
+
+ships <- readShips('ships.csv', 'ships.rds')
 
 ui <- fluidPage(
   titlePanel("Marine data"),
