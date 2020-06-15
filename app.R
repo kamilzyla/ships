@@ -12,24 +12,26 @@ vesselInput <- function(id) {
 }
 
 vessel <- function(input, output, session, vessels) {
+  group <- reactive({
+    vessels %>% filter(type == input$type)
+  })
+  row <- reactive({
+    group() %>% filter(name == input$name)
+  })
   observeEvent(input$type, {
     updateSelectInput(session, "type", choices = levels(vessels$type))
   }, once = TRUE)
   observeEvent(input$type, {
-    choices <- vessels %>% filter(type == input$type) %>% select(name)
-    updateSelectInput(session, "name", choices = choices)
+    updateSelectInput(session, "name", choices = group()$name)
   }, ignoreInit = TRUE)
-  row <- reactive({
-    vessels %>% filter(type == input$type, name == input$name)
-  })
   return(row)
 }
 
 ui <- fluidPage(
-  titlePanel('Vessel App'),
+  titlePanel("Marine data"),
   sidebarLayout(
     sidebarPanel(
-      vesselInput('vessel')
+      vesselInput("vessel")
     ),
     mainPanel(
       leafletOutput("map"),
