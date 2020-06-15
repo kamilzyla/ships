@@ -3,7 +3,9 @@ library(geosphere)
 library(readr)
 
 readShips <- function(csv, rds) {
-  if (file.exists(rds)) {  # Possible race condition / access problem.
+  # Using file.exists this way might introduce a race condition or access
+  # problem, however it's fine as long as we run a single app instance.
+  if (file.exists(rds)) {
     message("Reading precomputed ship data")
     ships <- readRDS(rds)
   } else {
@@ -46,6 +48,8 @@ readShips <- function(csv, rds) {
     ungroup()
 }
 
+# Append IDs to names where necessary to uniquely identify each ship with
+# (type, name) pair.
 .uniqueNames <- function(df) {
   df %>%
     group_by(type, name) %>%
